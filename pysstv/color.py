@@ -4,6 +4,8 @@ from six.moves import range
 from pysstv.sstv import byte_to_freq, FREQ_BLACK, FREQ_WHITE, FREQ_VIS_START
 from pysstv.grayscale import GrayscaleSSTV
 from itertools import chain
+import operator
+
 
 
 RED, GREEN, BLUE = range(3)
@@ -105,6 +107,39 @@ class Robot36(ColorSSTV):
                 ((byte_to_freq(p[channel]), uv_pixel_time) for p in pixels))
 
 
+class PD90(ColorSSTV):
+    VIS_CODE = 0x63
+    WIDTH = 320
+    HEIGHT = 240
+    SYNC  = 20
+    Y_SCAN = 170.240
+    C_SCAN = 170.240
+    PORCH  = 2.080
+
+    def on_init(self):
+        self.yuv = self.image.convert('YCbCr').load()
+
+    def encode_line(self, line):
+        pixels_odd = [self.yuv[col, line] for col in range(self.WIDTH)]
+        pixels_even = [self.yuv[col, line+1] for col in range(self.WIDTH)]
+        #tuple(map(operator.add, a, b))
+        rb_y = [((tuple(map(operator.add,self.yuv[col,line],self.yuv[col,line+1])))) for col in range(self.WIDTH)]
+        channel = line % 2 # odd = 1 even = 0
+        y_pixel_time = self.Y_SCAN / self.WIDTH
+        uv_pixel_time = self.C_SCAN / self.WIDTH
+        if channel == 1 :
+            return chain(
+                    [(FREQ_BLACK, self.PORCH)],
+                    ((byte_to_freq(p[0]), y_pixel_time) for p in pixels_odd),
+                     ((byte_to_freq(p[2]/2), uv_pixel_time) for p in rb_y),
+                        ((byte_to_freq(p[1]/2), uv_pixel_time) for p in rb_y),
+                    ((byte_to_freq(p[0]), y_pixel_time) for p in pixels_even))
+        else :
+            chain1 = ()
+            return chain1
+
+
+
 class PasokonP3(ColorSSTV):
     """
     [ VIS code or horizontal sync here ]
@@ -125,22 +160,22 @@ class PasokonP3(ColorSSTV):
     SYNC = 25 * TIMEUNIT
     SCAN = WIDTH * TIMEUNIT
     INTER_CH_GAP = 5 * TIMEUNIT
-    
+
     def before_channel(self, index):
         if index == self.COLOR_SEQ[0]:
             yield FREQ_BLACK, self.INTER_CH_GAP
 
     def after_channel(self, index):
         yield FREQ_BLACK, self.INTER_CH_GAP
-        
-        
+
+
 class PasokonP5(PasokonP3):
     TIMEUNIT = 1000/3200. # ms
     VIS_CODE = 0x72
     SYNC = 25 * TIMEUNIT
     SCAN = PasokonP3.WIDTH * TIMEUNIT
     INTER_CH_GAP = 5 * TIMEUNIT
-        
+
 class PasokonP7(PasokonP3):
     TIMEUNIT = 1000/2400. # ms
     VIS_CODE = 0xF3
@@ -149,4 +184,4 @@ class PasokonP7(PasokonP3):
     INTER_CH_GAP = 5 * TIMEUNIT
 
 
-MODES = (MartinM1, MartinM2, ScottieS1, ScottieS2, Robot36, PasokonP3, PasokonP5, PasokonP7)
+MODES = (MartinM1, MartinM2, ScottieS1, ScottieS2, Robot36, PasokonP3, PasokonP5, PasokonP7, PD90)
