@@ -111,7 +111,7 @@ class PD90(ColorSSTV):
     VIS_CODE = 0x63
     WIDTH = 320
     HEIGHT = 240
-    SYNC  = 20
+    SYNC  = 10
     Y_SCAN = 170.240
     C_SCAN = 170.240
     PORCH  = 2.080
@@ -138,6 +138,36 @@ class PD90(ColorSSTV):
             chain1 = ()
             return chain1
 
+# class PD90(ColorSSTV):
+#     VIS_CODE = 0x63
+#     WIDTH = 320
+#     HEIGHT = 240
+#     SYNC  = 20
+#     Y_SCAN = 170.240
+#     C_SCAN = 170.240
+#     PORCH  = 2.080
+#
+#     def on_init(self):
+#         self.yuv = self.image.convert('YCbCr').load()
+#
+#     def encode_line(self, line):
+#         pixels_odd = [self.yuv[col, line] for col in range(self.WIDTH)]
+#         pixels_even = [self.yuv[col, line+1] for col in range(self.WIDTH)]
+#         #tuple(map(operator.add, a, b))
+#         #rb_y = [((tuple(map(operator.add,self.yuv[col,line],self.yuv[col,line+1])))) for col in range(self.WIDTH)]
+#         channel = line % 2 # odd = 1 even = 0
+#         y_pixel_time = self.Y_SCAN / self.WIDTH
+#         uv_pixel_time = self.C_SCAN / self.WIDTH
+#         if channel == 1 :
+#             return chain(
+#                     [(FREQ_BLACK, self.PORCH)],
+#                     ((byte_to_freq(p[0]), y_pixel_time) for p in pixels_odd),
+#                      ((byte_to_freq(p[2]), uv_pixel_time) for p in pixels_odd),
+#                         ((byte_to_freq(p[1]), uv_pixel_time) for p in pixels_even),
+#                     ((byte_to_freq(p[0]), y_pixel_time) for p in pixels_even))
+#         else :
+#             chain1 = ()
+#             return chain1
 
 
 class PasokonP3(ColorSSTV):

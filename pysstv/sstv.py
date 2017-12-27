@@ -47,6 +47,7 @@ class SSTV(object):
         """writes the whole image to a Microsoft WAV file"""
         fmt = self.BITS_TO_STRUCT[self.bits]
         data = array(fmt, self.gen_samples())
+        print(data)
         if self.nchannels != 1:
             data = array(fmt, chain.from_iterable(
                 zip(*([data] * self.nchannels))))
@@ -116,6 +117,7 @@ class SSTV(object):
         parity_freq = FREQ_VIS_BIT1 if num_ones % 2 == 1 else FREQ_VIS_BIT0
         yield parity_freq, MSEC_VIS_BIT
         yield FREQ_SYNC, MSEC_VIS_BIT  # stop bit
+        yield FREQ_SYNC, 10
         for freq_tuple in self.gen_image_tuples():
             yield freq_tuple
         for fskid_byte in map(ord, self.fskid_payload):
